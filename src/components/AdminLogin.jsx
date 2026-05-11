@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { Lock, User, Eye, EyeOff, Leaf } from 'lucide-react';
 import './AdminLogin.css';
 
-// Credentials — change these to whatever you want
-const ADMIN_USERNAME = 'cookies';
-const ADMIN_PASSWORD = 'darjeeling2025';
+// Credentials loaded from .env — never exposed on GitHub
+const ADMIN_USERNAME = import.meta.env.VITE_ADMIN_USERNAME;
+const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD;
 
 const AdminLogin = ({ onLogin }) => {
   const [username, setUsername] = useState('');
