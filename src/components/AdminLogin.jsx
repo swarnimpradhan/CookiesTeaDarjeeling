@@ -3,8 +3,8 @@ import { Lock, User, Eye, EyeOff, Leaf } from 'lucide-react';
 import './AdminLogin.css';
 
 // Credentials loaded from .env — never exposed on GitHub
-const ADMIN_USERNAME = import.meta.env.VITE_ADMIN_USERNAME;
-const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD;
+const ADMIN_USERNAME = import.meta.env.VITE_ADMIN_USERNAME || 'Swarnim';
+const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || 'Bbjul666';
 
 const AdminLogin = ({ onLogin }) => {
   const [username, setUsername] = useState('');
