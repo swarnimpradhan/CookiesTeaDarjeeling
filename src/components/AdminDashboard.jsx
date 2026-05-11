@@ -40,37 +40,53 @@ const AdminDashboard = () => {
 
   const handleAddProduct = async (e) => {
     e.preventDefault();
-    if (!newProduct.image_url.trim()) {
-      setMessage({ type: 'error', text: 'Please provide an image URL.' });
-      return;
+    setMessage(null);
+
+    if (!newProduct.name.trim()) {
+      setMessage({ type: 'error', text: 'Product name is required.' }); return;
     }
-    if (!newProduct.name.trim() || !newProduct.price) {
-      setMessage({ type: 'error', text: 'Please fill in all required fields.' });
-      return;
+    if (!newProduct.price || parseFloat(newProduct.price) <= 0) {
+      setMessage({ type: 'error', text: 'A valid price is required.' }); return;
+    }
+    if (!newProduct.image_url.trim()) {
+      setMessage({ type: 'error', text: 'Image URL is required.' }); return;
     }
 
     try {
       setAdding(true);
-      setMessage(null);
 
-      const { error } = await supabase
+      const payload = {
+        name: newProduct.name.trim(),
+        description: newProduct.description.trim(),
+        category: newProduct.category,
+        price: parseFloat(newProduct.price),
+        image_url: newProduct.image_url.trim(),
+      };
+
+      console.log('Inserting product:', payload);
+
+      const { data, error } = await supabase
         .from('products')
-        .insert([{
-          name: newProduct.name.trim(),
-          description: newProduct.description.trim(),
-          category: newProduct.category,
-          price: parseFloat(newProduct.price),
-          image_url: newProduct.image_url.trim(),
-        }]);
+        .insert([payload])
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase insert error:', error);
+        // Friendly hint for RLS policy block
+        const isRLS = error.code === '42501' || error.message?.includes('row-level security') || error.message?.includes('policy');
+        const hint = isRLS
+          ? ' ⚠️ Hint: Go to Supabase → Table Editor → products → Policies, and add an INSERT policy that allows "anon" role.'
+          : '';
+        throw new Error(`${error.message} (code: ${error.code})${hint}`);
+      }
 
-      setMessage({ type: 'success', text: `"${newProduct.name}" added to catalog!` });
+      console.log('Inserted:', data);
+      setMessage({ type: 'success', text: `✅ "${newProduct.name}" added to catalog!` });
       setNewProduct({ name: '', description: '', price: '', category: 'First Flush', image_url: '' });
       fetchProducts();
-    } catch (error) {
-      console.error('Error adding product:', error);
-      setMessage({ type: 'error', text: 'Error adding product: ' + error.message });
+    } catch (err) {
+      console.error('Error adding product:', err);
+      setMessage({ type: 'error', text: err.message });
     } finally {
       setAdding(false);
     }
@@ -152,11 +168,10 @@ const AdminDashboard = () => {
               <div className="form-group">
                 <label>Image URL *</label>
                 <input
-                  type="url"
+                  type="text"
                   value={newProduct.image_url}
                   onChange={(e) => setNewProduct({ ...newProduct, image_url: e.target.value })}
-                  required
-                  placeholder="https://..."
+                  placeholder="Paste image link (https://...)"
                 />
               </div>
             </div>

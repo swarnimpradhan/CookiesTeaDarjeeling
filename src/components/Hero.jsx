@@ -74,10 +74,10 @@ const Hero = () => {
       {/* ── Feature strip ── */}
       <div className="feature-strip">
         {[
-          { icon: '🌿', label: 'Single Estate', desc: 'Direct from the garden' },
-          { icon: '✈️', label: 'Fast Shipping', desc: 'Delivered in 3–5 days' },
-          { icon: '🏆', label: 'Award Winning', desc: 'Certified quality teas' },
-          { icon: '♻️', label: 'Eco Packed', desc: 'Sustainable packaging' },
+          { icon: '🍃', label: 'Pure Tea', desc: '100% natural, no additives' },
+          { icon: '✈️', label: 'Worldwide Shipping', desc: 'Delivered to your doorstep' },
+          { icon: '🌱', label: 'Multiple Gardens', desc: 'Fresh from Darjeeling estates' },
+          { icon: '🏡', label: 'Straight to You', desc: 'No middlemen, direct price' },
         ].map((f) => (
           <div className="feature-item" key={f.label}>
             <span className="feature-icon">{f.icon}</span>
