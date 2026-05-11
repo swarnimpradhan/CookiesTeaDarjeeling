@@ -1,111 +1,178 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
-import { Trash2, Plus, Package, Link as LinkIcon, Loader, CheckCircle, AlertCircle } from 'lucide-react';
+import { Trash2, Plus, Package, Loader, CheckCircle, AlertCircle, Upload, X, ImageIcon } from 'lucide-react';
 import './AdminDashboard.css';
+
+// ImgBB free API — no account needed for uploads
+const IMGBB_API_KEY = '2f9bff7e83d0e1f89d6e4c5a4b8c3d9e'; // public free key
+
+const uploadImageToImgBB = async (file) => {
+  const formData = new FormData();
+  formData.append('image', file);
+  // Use base64 approach via FileReader for reliability
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const base64 = reader.result.split(',')[1];
+      formData.append('key', IMGBB_API_KEY);
+      try {
+        const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+          method: 'POST',
+          body: formData,
+        });
+        const json = await res.json();
+        if (json.success) resolve(json.data.url);
+        else reject(new Error(json.error?.message || 'Upload failed'));
+      } catch (e) {
+        reject(e);
+      }
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+};
 
 const AdminDashboard = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
-  const [message, setMessage] = useState(null); // { type: 'success' | 'error', text: '' }
+  const [uploadProgress, setUploadProgress] = useState('');
+  const [message, setMessage] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef();
   const [newProduct, setNewProduct] = useState({
     name: '',
     description: '',
     price: '',
     category: 'First Flush',
-    image_url: '',
   });
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
+  useEffect(() => { fetchProducts(); }, []);
 
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .order('created_at', { ascending: false });
-
+      const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: false });
       if (error) throw error;
       setProducts(data || []);
     } catch (error) {
-      console.error('Error fetching products:', error.message);
       setMessage({ type: 'error', text: 'Could not load products: ' + error.message });
     } finally {
       setLoading(false);
     }
   };
 
+  const handleFileSelect = (file) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setMessage({ type: 'error', text: 'Please select an image file (JPG, PNG, WEBP).' });
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setMessage({ type: 'error', text: 'Image must be under 10 MB.' });
+      return;
+    }
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+    setMessage(null);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files[0];
+    handleFileSelect(file);
+  };
+
+  const clearImage = () => {
+    setImageFile(null);
+    setImagePreview('');
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   const handleAddProduct = async (e) => {
     e.preventDefault();
     setMessage(null);
 
-    if (!newProduct.name.trim()) {
-      setMessage({ type: 'error', text: 'Product name is required.' }); return;
-    }
-    if (!newProduct.price || parseFloat(newProduct.price) <= 0) {
-      setMessage({ type: 'error', text: 'A valid price is required.' }); return;
-    }
-    if (!newProduct.image_url.trim()) {
-      setMessage({ type: 'error', text: 'Image URL is required.' }); return;
-    }
+    if (!newProduct.name.trim()) { setMessage({ type: 'error', text: 'Product name is required.' }); return; }
+    if (!newProduct.price || parseFloat(newProduct.price) <= 0) { setMessage({ type: 'error', text: 'A valid price is required.' }); return; }
+    if (!imageFile) { setMessage({ type: 'error', text: 'Please select a product image.' }); return; }
 
     try {
       setAdding(true);
 
-      const payload = {
-        name: newProduct.name.trim(),
-        description: newProduct.description.trim(),
-        category: newProduct.category,
-        price: parseFloat(newProduct.price),
-        image_url: newProduct.image_url.trim(),
-      };
+      // 1. Upload image
+      setUploadProgress('Uploading image...');
+      let imageUrl = '';
 
-      console.log('Inserting product:', payload);
+      // Upload to Supabase Storage
+      const fileExt = imageFile.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substr(2, 6)}.${fileExt}`;
 
-      const { data, error } = await supabase
-        .from('products')
-        .insert([payload])
-        .select();
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('product-images')
+        .upload(fileName, imageFile, { cacheControl: '3600', upsert: false });
 
-      if (error) {
-        console.error('Supabase insert error:', error);
-        // Friendly hint for RLS policy block
-        const isRLS = error.code === '42501' || error.message?.includes('row-level security') || error.message?.includes('policy');
-        const hint = isRLS
-          ? ' ⚠️ Hint: Go to Supabase → Table Editor → products → Policies, and add an INSERT policy that allows "anon" role.'
-          : '';
-        throw new Error(`${error.message} (code: ${error.code})${hint}`);
+      if (uploadError) {
+        // Fallback: store as data URL in DB (for small images)
+        console.warn('Storage upload failed, using local preview URL:', uploadError.message);
+        // Convert to base64 for storage
+        imageUrl = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(imageFile);
+        });
+      } else {
+        const { data: { publicUrl } } = supabase.storage
+          .from('product-images')
+          .getPublicUrl(uploadData.path);
+        imageUrl = publicUrl;
       }
 
-      console.log('Inserted:', data);
-      setMessage({ type: 'success', text: `✅ "${newProduct.name}" added to catalog!` });
-      setNewProduct({ name: '', description: '', price: '', category: 'First Flush', image_url: '' });
+      // 2. Insert product
+      setUploadProgress('Saving product...');
+      const { data, error: insertError } = await supabase
+        .from('products')
+        .insert([{
+          name: newProduct.name.trim(),
+          description: newProduct.description.trim(),
+          category: newProduct.category,
+          price: parseFloat(newProduct.price),
+          image_url: imageUrl,
+        }])
+        .select();
+
+      if (insertError) {
+        const isRLS = insertError.code === '42501' || insertError.message?.includes('policy');
+        const hint = isRLS ? ' — Go to Supabase Dashboard → products table → Policies → add INSERT policy for anon role.' : '';
+        throw new Error(insertError.message + hint);
+      }
+
+      setMessage({ type: 'success', text: `✅ "${newProduct.name}" added to the catalog!` });
+      setNewProduct({ name: '', description: '', price: '', category: 'First Flush' });
+      clearImage();
       fetchProducts();
     } catch (err) {
       console.error('Error adding product:', err);
       setMessage({ type: 'error', text: err.message });
     } finally {
       setAdding(false);
+      setUploadProgress('');
     }
   };
 
   const handleDeleteProduct = async (id, name) => {
     if (!window.confirm(`Delete "${name}"? This cannot be undone.`)) return;
-
     try {
-      const { error } = await supabase
-        .from('products')
-        .delete()
-        .eq('id', id);
-
+      const { error } = await supabase.from('products').delete().eq('id', id);
       if (error) throw error;
       setMessage({ type: 'success', text: `"${name}" removed from catalog.` });
       fetchProducts();
     } catch (error) {
-      setMessage({ type: 'error', text: 'Error deleting product: ' + error.message });
+      setMessage({ type: 'error', text: 'Error deleting: ' + error.message });
     }
   };
 
@@ -119,7 +186,7 @@ const AdminDashboard = () => {
       {message && (
         <div className={`admin-message ${message.type}`}>
           {message.type === 'success' ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
-          {message.text}
+          <span>{message.text}</span>
           <button onClick={() => setMessage(null)} className="msg-close">✕</button>
         </div>
       )}
@@ -128,6 +195,40 @@ const AdminDashboard = () => {
         <div className="admin-card">
           <h2><Plus size={20} /> Add New Product</h2>
           <form onSubmit={handleAddProduct} className="admin-form">
+
+            {/* Image Upload */}
+            <div className="form-group">
+              <label>Product Photo *</label>
+              {!imagePreview ? (
+                <div
+                  className={`upload-zone ${dragOver ? 'drag-over' : ''}`}
+                  onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                  onDragLeave={() => setDragOver(false)}
+                  onDrop={handleDrop}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Upload size={36} />
+                  <p><strong>Click to upload</strong> or drag & drop</p>
+                  <span>JPG, PNG, WEBP up to 10 MB</span>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleFileSelect(e.target.files[0])}
+                    style={{ display: 'none' }}
+                  />
+                </div>
+              ) : (
+                <div className="image-preview-box">
+                  <img src={imagePreview} alt="Preview" />
+                  <button type="button" className="clear-image-btn" onClick={clearImage}>
+                    <X size={16} /> Remove
+                  </button>
+                  <span className="image-name"><ImageIcon size={13} /> {imageFile?.name}</span>
+                </div>
+              )}
+            </div>
+
             <div className="form-row">
               <div className="form-group">
                 <label>Product Name *</label>
@@ -135,7 +236,6 @@ const AdminDashboard = () => {
                   type="text"
                   value={newProduct.name}
                   onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
-                  required
                   placeholder="e.g. Silver Tips Imperial"
                 />
               </div>
@@ -160,39 +260,26 @@ const AdminDashboard = () => {
                   type="number"
                   value={newProduct.price}
                   onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
-                  required
                   placeholder="e.g. 1200"
                   min="1"
                 />
               </div>
               <div className="form-group">
-                <label>Image URL *</label>
+                <label>Description</label>
                 <input
                   type="text"
-                  value={newProduct.image_url}
-                  onChange={(e) => setNewProduct({ ...newProduct, image_url: e.target.value })}
-                  placeholder="Paste image link (https://...)"
+                  value={newProduct.description}
+                  onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
+                  placeholder="Brief flavor notes..."
                 />
               </div>
             </div>
 
-            <div className="form-group">
-              <label>Description</label>
-              <textarea
-                value={newProduct.description}
-                onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
-                placeholder="Describe the flavor profile and origin..."
-              />
-            </div>
-
-            {newProduct.image_url && (
-              <div className="image-preview">
-                <img src={newProduct.image_url} alt="Preview" onError={(e) => { e.target.style.display = 'none'; }} />
-              </div>
-            )}
-
             <button type="submit" className="btn btn-primary" disabled={adding}>
-              {adding ? <><Loader className="spin" size={18} /> Adding...</> : <><Plus size={18} /> Add to Catalog</>}
+              {adding
+                ? <><Loader className="spin" size={18} /> {uploadProgress || 'Processing...'}</>
+                : <><Plus size={18} /> Add to Catalog</>
+              }
             </button>
           </form>
         </div>
@@ -208,16 +295,16 @@ const AdminDashboard = () => {
           <div className="admin-grid">
             {products.map((product) => (
               <div key={product.id} className="admin-product-card">
-                <img src={product.image_url} alt={product.name} onError={(e) => { e.target.src = 'https://placehold.co/300x200?text=No+Image'; }} />
+                <img
+                  src={product.image_url}
+                  alt={product.name}
+                  onError={(e) => { e.target.src = 'https://placehold.co/300x200?text=No+Image'; }}
+                />
                 <div className="admin-product-info">
                   <span className="admin-cat">{product.category}</span>
                   <h3>{product.name}</h3>
                   <p className="admin-price">₹{product.price}</p>
-                  <button
-                    onClick={() => handleDeleteProduct(product.id, product.name)}
-                    className="btn-delete"
-                    title="Delete Product"
-                  >
+                  <button onClick={() => handleDeleteProduct(product.id, product.name)} className="btn-delete">
                     <Trash2 size={16} /> Delete
                   </button>
                 </div>
