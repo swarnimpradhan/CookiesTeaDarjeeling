@@ -1,47 +1,43 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import ProductCard from './ProductCard';
+import { supabase } from '../lib/supabase';
+import { Loader } from 'lucide-react';
 import './Catalog.css';
 
-const products = [
-  {
-    id: 1,
-    name: "Spring Valley Premium",
-    flush: "First Flush",
-    description: "Harvested in early spring, this premium tea offers a delicate, floral aroma with a light golden infusion and slightly astringent, fresh finish.",
-    price: "₹1,200 / 100g",
-    imageUrl: "https://images.unsplash.com/photo-1594631252845-29fc4cc8cbf9?q=80&w=800&auto=format&fit=crop",
-    tags: ["Floral", "Delicate", "Spring"]
-  },
-  {
-    id: 2,
-    name: "Muscatel Royale",
-    flush: "Second Flush",
-    description: "The 'Champagne of Teas'. A mature, full-bodied summer harvest renowned for its distinct, sweet muscatel grape flavor and rich amber hue.",
-    price: "₹1,500 / 100g",
-    imageUrl: "https://images.unsplash.com/photo-1576092762791-dd9e2220cad1?q=80&w=800&auto=format&fit=crop",
-    tags: ["Muscatel", "Full-bodied", "Fruity"]
-  },
-  {
-    id: 3,
-    name: "Monsoon Mist",
-    flush: "Monsoon Flush",
-    description: "Grown during the heavy rains, this robust tea provides an earthy, strong infusion. Perfect for those who prefer a bold, intense cup or brewing chai.",
-    price: "₹800 / 100g",
-    imageUrl: "https://images.unsplash.com/photo-1563822249548-9a72b6353cd1?q=80&w=800&auto=format&fit=crop",
-    tags: ["Earthy", "Robust", "Strong"]
-  },
-  {
-    id: 4,
-    name: "Autumn Amber",
-    flush: "Autumn Flush",
-    description: "The final harvest of the year yields a smooth, mellow cup with a heavier body and a comforting, slightly sweet, 'cooked' fruit profile.",
-    price: "₹1,000 / 100g",
-    imageUrl: "https://images.unsplash.com/photo-1571934811356-5cc5096fd80f?q=80&w=800&auto=format&fit=crop",
-    tags: ["Smooth", "Mellow", "Rich"]
-  }
-];
-
 const Catalog = ({ whatsappNumber }) => {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      
+      // Map Supabase fields to component props if necessary
+      const formattedProducts = data?.map(p => ({
+        ...p,
+        flush: p.category, // Assuming category is used for flush type
+        imageUrl: p.image_url,
+        price: `₹${p.price} / 100g`
+      })) || [];
+
+      setProducts(formattedProducts);
+    } catch (error) {
+      console.error('Error fetching products:', error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <section className="catalog" id="catalog">
       <div className="container">
@@ -51,15 +47,26 @@ const Catalog = ({ whatsappNumber }) => {
           <div className="catalog-divider"></div>
         </div>
         
-        <div className="catalog-grid">
-          {products.map((product) => (
-            <ProductCard 
-              key={product.id} 
-              product={product} 
-              whatsappNumber={whatsappNumber} 
-            />
-          ))}
-        </div>
+        {loading ? (
+          <div className="loading-state">
+            <Loader className="spin" size={40} />
+            <p>Loading the finest Darjeeling teas...</p>
+          </div>
+        ) : products.length > 0 ? (
+          <div className="catalog-grid">
+            {products.map((product) => (
+              <ProductCard 
+                key={product.id} 
+                product={product} 
+                whatsappNumber={whatsappNumber} 
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="empty-catalog">
+            <p>No products found in the catalog. Check back soon!</p>
+          </div>
+        )}
       </div>
     </section>
   );

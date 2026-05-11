@@ -8,7 +8,7 @@ const Footer = ({ whatsappNumber }) => {
       <div className="container footer-content">
         <div className="footer-brand">
           <div className="footer-logo">
-            <img src="/logo.JPG" alt="Cookies Darjeeling Tea Logo" className="footer-logo-img" />
+            <img src="/cookiesmainlogo.png" alt="Cookies Darjeeling Tea Logo" className="footer-logo-img" />
             <h3>Cookies Tea</h3>
           </div>
           <p className="footer-description">

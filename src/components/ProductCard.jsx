@@ -21,7 +21,7 @@ const ProductCard = ({ product, whatsappNumber }) => {
       </div>
       <div className="product-content">
         <div className="product-tags">
-          {tags.map((tag, index) => (
+          {tags && tags.map((tag, index) => (
             <span key={index} className="tag">{tag}</span>
           ))}
         </div>

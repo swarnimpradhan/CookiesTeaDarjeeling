@@ -18,7 +18,7 @@ const Navbar = () => {
     <nav className={`navbar ${isScrolled ? 'scrolled' : ''}`}>
       <div className="container navbar-content">
         <a href="/" className="logo-container">
-          <img src="/logo.JPG" alt="Cookies Darjeeling Tea Logo" className="logo-img" />
+          <img src="/cookiesmainlogo.png" alt="Cookies Darjeeling Tea Logo" className="logo-img" />
           <span className="logo-text">Cookies Tea</span>
         </a>
 
