@@ -4,9 +4,11 @@ import { supabase } from '../lib/supabase';
 import { Loader } from 'lucide-react';
 import './Catalog.css';
 
-const Catalog = ({ whatsappNumber }) => {
+const Catalog = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [priceRange, setPriceRange] = useState(5000);
+  const [activeCategory, setActiveCategory] = useState('All');
 
   useEffect(() => {
     fetchProducts();
@@ -22,12 +24,11 @@ const Catalog = ({ whatsappNumber }) => {
 
       if (error) throw error;
       
-      // Map Supabase fields to component props if necessary
       const formattedProducts = data?.map(p => ({
         ...p,
-        flush: p.category, // Assuming category is used for flush type
+        flush: p.category,
         imageUrl: p.image_url,
-        price: `₹${p.price} / 100g`
+        priceDisplay: `₹${p.price}`
       })) || [];
 
       setProducts(formattedProducts);
@@ -38,35 +39,99 @@ const Catalog = ({ whatsappNumber }) => {
     }
   };
 
+  const categories = ['All', 'First Flush', 'Second Flush', 'Autumn Flush', 'Monsoon Flush'];
+  
+  const filteredProducts = products.filter(p => {
+    const matchesCategory = activeCategory === 'All' || p.category === activeCategory;
+    const matchesPrice = p.price <= priceRange;
+    return matchesCategory && matchesPrice;
+  });
+
   return (
     <section className="catalog" id="catalog">
-      <div className="container">
-        <div className="catalog-header">
-          <h2 className="catalog-title">The Darjeeling Catalog</h2>
-          <p className="catalog-subtitle">Explore our carefully curated selection of the finest Darjeeling flushes.</p>
-          <div className="catalog-divider"></div>
-        </div>
-        
-        {loading ? (
-          <div className="loading-state">
-            <Loader className="spin" size={40} />
-            <p>Loading the finest Darjeeling teas...</p>
-          </div>
-        ) : products.length > 0 ? (
-          <div className="catalog-grid">
-            {products.map((product) => (
-              <ProductCard 
-                key={product.id} 
-                product={product} 
-                whatsappNumber={whatsappNumber} 
+      <div className="container catalog-container">
+        <aside className="catalog-sidebar">
+          <div className="sidebar-widget">
+            <h3 className="widget-title">Filter by price</h3>
+            <div className="price-filter">
+              <input 
+                type="range" 
+                min="0" 
+                max="5000" 
+                value={priceRange} 
+                onChange={(e) => setPriceRange(parseInt(e.target.value))}
+                className="range-slider"
               />
-            ))}
+              <div className="price-range-labels">
+                <span>₹0</span>
+                <span>₹{priceRange}</span>
+              </div>
+            </div>
           </div>
-        ) : (
-          <div className="empty-catalog">
-            <p>No products found in the catalog. Check back soon!</p>
+
+          <div className="sidebar-widget">
+            <h3 className="widget-title">Categories</h3>
+            <ul className="category-list">
+              {categories.map(cat => (
+                <li key={cat}>
+                  <button 
+                    className={`category-btn ${activeCategory === cat ? 'active' : ''}`}
+                    onClick={() => setActiveCategory(cat)}
+                  >
+                    {cat}
+                    <span className="cat-count">
+                      ({cat === 'All' ? products.length : products.filter(p => p.category === cat).length})
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
           </div>
-        )}
+
+          <div className="sidebar-widget promo-widget">
+            <div className="promo-card">
+              <h4 className="promo-title">Hottest Deals</h4>
+              <img src="/tea_garden_hero.png" alt="Tea Deal" className="promo-img" />
+            </div>
+          </div>
+        </aside>
+
+        <main className="catalog-main">
+          <header className="catalog-main-header">
+            <div className="breadcrumb">Home / Shop</div>
+            <h1 className="main-title">Store</h1>
+            <div className="catalog-meta">
+              <span className="result-count">Showing all {filteredProducts.length} results</span>
+              <div className="sort-wrapper">
+                <select className="sort-select">
+                  <option>Default sorting</option>
+                  <option>Sort by price: low to high</option>
+                  <option>Sort by price: high to low</option>
+                </select>
+              </div>
+            </div>
+          </header>
+          
+          {loading ? (
+            <div className="loading-state">
+              <Loader className="spin" size={40} />
+              <p>Loading the finest Darjeeling teas...</p>
+            </div>
+          ) : filteredProducts.length > 0 ? (
+            <div className="catalog-grid">
+              {filteredProducts.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="empty-catalog">
+              <p>No products found matching your criteria.</p>
+            </div>
+          )}
+        </main>
       </div>
     </section>
   );

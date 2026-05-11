@@ -28,6 +28,7 @@ const Footer = ({ whatsappNumber }) => {
             <li><a href="#catalog">The Catalog</a></li>
             <li><a href="#">Shipping Policy</a></li>
             <li><a href="#">FAQ</a></li>
+            <li><a href="/admin">Admin</a></li>
           </ul>
         </div>
         

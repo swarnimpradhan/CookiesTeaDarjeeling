@@ -23,13 +23,19 @@ const Navbar = () => {
         </a>
 
         <div className="nav-links desktop-only">
-          <a href="#about" className="nav-link">Our Story</a>
-          <a href="#catalog" className="nav-link">The Catalog</a>
-          <a href="#contact" className="nav-link">Contact</a>
+          <a href="/" className="nav-link">Home</a>
+          <a href="#catalog" className="nav-link">Store</a>
+          <a href="#about" className="nav-link">About Us</a>
+          <a href="#contact" className="nav-link">Contact Us</a>
         </div>
 
         <div className="nav-actions">
-          <a href="#catalog" className="btn btn-primary desktop-only">Shop Now</a>
+          <div className="cart-icon-container">
+            <div className="cart-icon-wrapper">
+              <ShoppingBag size={20} />
+              <span className="cart-badge">0</span>
+            </div>
+          </div>
           <button className="mobile-menu-btn" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
             {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>

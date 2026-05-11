@@ -1,24 +1,28 @@
 import React from 'react';
-import { ArrowRight } from 'lucide-react';
 import './Hero.css';
+import heroImg from '../assets/tea_garden_hero.png';
 
 const Hero = () => {
   return (
-    <section className="hero" id="about">
-      <div className="hero-overlay"></div>
-      <div className="container hero-content">
-        <span className="hero-subtitle animate-fade-in">Misty Hills of Darjeeling</span>
-        <h1 className="hero-title animate-fade-in delay-1">
-          Experience the Champagne <br />
-          <span className="text-accent">of Teas</span>
-        </h1>
-        <p className="hero-description animate-fade-in delay-2">
-          From the finest tea estates directly to your cup. Discover our exquisite selection of First Flush, Second Flush, and Autumn harvests, carefully handpicked for perfection.
-        </p>
-        <div className="hero-actions animate-fade-in delay-3">
-          <a href="#catalog" className="btn btn-primary">
-            Explore Collection <ArrowRight size={18} />
-          </a>
+    <section className="hero">
+      <div className="hero-background">
+        <img src={heroImg} alt="Darjeeling Tea Garden" />
+        <div className="hero-overlay"></div>
+      </div>
+      
+      <div className="container hero-container">
+        <div className="hero-content-wrapper">
+          <span className="hero-pretitle">Premium Darjeeling Collection</span>
+          <h1 className="hero-title">
+            Amazing Variety <br />
+            Of Teas Starting <br />
+            Just ₹499
+          </h1>
+          <div className="hero-actions">
+            <a href="#catalog" className="btn btn-primary hero-btn">
+              Shop Now
+            </a>
+          </div>
         </div>
       </div>
     </section>
