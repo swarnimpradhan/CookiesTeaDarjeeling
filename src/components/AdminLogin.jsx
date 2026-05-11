@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { Lock, User, Eye, EyeOff, Leaf } from 'lucide-react';
 import './AdminLogin.css';
 
-// Credentials loaded from .env — never exposed on GitHub
-const ADMIN_USERNAME = import.meta.env.VITE_ADMIN_USERNAME || 'Swarnim';
-const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || 'Bbjul666';
+// Credentials — strip \r in case of Windows line endings in .env
+const ADMIN_USERNAME = (import.meta.env.VITE_ADMIN_USERNAME || 'Swarnim').replace(/\r/g, '');
+const ADMIN_PASSWORD = (import.meta.env.VITE_ADMIN_PASSWORD || 'Bbjul666').replace(/\r/g, '');
 
 const AdminLogin = ({ onLogin }) => {
   const [username, setUsername] = useState('');
@@ -15,7 +15,11 @@ const AdminLogin = ({ onLogin }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+    const trimmedUser = username.trim();
+    const trimmedPass = password.trim();
+    console.log('Entered:', JSON.stringify(trimmedUser), JSON.stringify(trimmedPass));
+    console.log('Expected:', JSON.stringify(ADMIN_USERNAME), JSON.stringify(ADMIN_PASSWORD));
+    if (trimmedUser === ADMIN_USERNAME && trimmedPass === ADMIN_PASSWORD) {
       sessionStorage.setItem('admin_auth', 'true');
       onLogin();
     } else {
