@@ -6,6 +6,7 @@ import Hero from './components/Hero';
 import Catalog from './components/Catalog';
 import Footer from './components/Footer';
 import AdminDashboard from './components/AdminDashboard';
+import ProtectedAdmin from './components/ProtectedAdmin';
 
 const WHATSAPP_NUMBER = '919832251149';
 
@@ -26,7 +27,7 @@ function App() {
               <Catalog />
             </main>
           } />
-          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin" element={<ProtectedAdmin />} />
         </Routes>
         <Footer whatsappNumber={WHATSAPP_NUMBER} />
 
