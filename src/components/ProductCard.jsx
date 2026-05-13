@@ -33,7 +33,10 @@ const ProductCard = ({ product }) => {
             <Star key={i} size={13} fill={i < 4 ? '#4a6741' : 'none'} color={i < 4 ? '#4a6741' : '#ccc'} />
           ))}
         </div>
-        <div className="product-price">₹{price}</div>
+        <div className="product-price-wrapper">
+          <span className="product-price">₹{price}</span>
+          <span className="price-unit">per 100g</span>
+        </div>
         <button className="btn-order-whatsapp" onClick={handleWhatsAppOrder}>
           <MessageCircle size={18} />
           Order on WhatsApp

@@ -87,15 +87,92 @@
   padding: 1.5rem;
   border-radius: 20px;
   text-align: center;
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
 }
 
 .promo-title {
-  margin-bottom: 1rem;
+  margin-bottom: 1.2rem;
+  font-size: 1.05rem;
+  color: var(--color-primary);
+  font-weight: 700;
 }
 
 .promo-img {
   border-radius: 10px;
   width: 100%;
+}
+
+/* Floater dynamic component styles */
+.floater-item {
+  position: relative;
+  cursor: pointer;
+  border-radius: 14px;
+  overflow: hidden;
+  transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+  background: white;
+  padding-bottom: 1rem;
+  text-align: left;
+  border: 1px solid rgba(74, 103, 65, 0.15);
+}
+
+.floater-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgba(74, 103, 65, 0.12);
+}
+
+.floater-img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  display: block;
+}
+
+.floater-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: var(--color-accent);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.25rem 0.6rem;
+  border-radius: 50px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.floater-info {
+  padding: 0.8rem 1rem 0;
+}
+
+.floater-info h5 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin-bottom: 0.3rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.floater-price {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: 0.5rem;
+}
+
+.floater-cta {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-accent);
+  display: inline-block;
+  transition: opacity var(--transition-fast);
+}
+
+.floater-item:hover .floater-cta {
+  text-decoration: underline;
 }
 
 /* Main Content Styles */

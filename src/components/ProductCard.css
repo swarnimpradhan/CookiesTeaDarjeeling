@@ -75,11 +75,23 @@
   margin: 0.2rem 0;
 }
 
+.product-price-wrapper {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  margin: 0.2rem 0 0.6rem;
+}
+
 .product-price {
   font-size: 1.2rem;
   font-weight: 700;
   color: var(--color-primary);
-  margin: 0.2rem 0 0.6rem;
+}
+
+.price-unit {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  font-weight: 500;
 }
 
 .btn-order-whatsapp {

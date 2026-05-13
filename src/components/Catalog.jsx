@@ -90,8 +90,24 @@ const Catalog = () => {
 
           <div className="sidebar-widget promo-widget">
             <div className="promo-card">
-              <h4 className="promo-title">Hottest Deals</h4>
-              <img src="/tea_garden_hero.png" alt="Tea Deal" className="promo-img" />
+              <h4 className="promo-title">✨ Freshly Picked Floater</h4>
+              {products.length > 0 ? (
+                <div className="floater-item" onClick={() => {
+                  const p = products[0];
+                  const msg = `Hello! I'd like to order *${p.name}* (${p.flush}) from Cookies Darjeeling Tea. Please let me know availability and delivery details. 🍃`;
+                  window.open(`https://wa.me/919832251149?text=${encodeURIComponent(msg)}`, '_blank');
+                }}>
+                  <img src={products[0].imageUrl} alt={products[0].name} className="floater-img" onError={(e) => { e.target.src = 'https://placehold.co/400x400?text=Tea'; }} />
+                  <span className="floater-badge">Latest Harvest</span>
+                  <div className="floater-info">
+                    <h5>{products[0].name}</h5>
+                    <p className="floater-price">₹{products[0].price} <span className="price-unit">per 100g</span></p>
+                    <span className="floater-cta">Order Now →</span>
+                  </div>
+                </div>
+              ) : (
+                <img src="/tea_garden_hero.png" alt="Tea Deal" className="promo-img" />
+              )}
             </div>
           </div>
         </aside>
